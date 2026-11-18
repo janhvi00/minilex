@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniLex</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+  /* Layout: a workbench. Rules and source editors sit side by side, results run full width underneath. */
+  :root {
+    --bg: #eef1f4;
+    --panel: #ffffff;
+    --panel-2: #f5f7f9;
+    --ink: #121c26;
+    --ink-2: #4b5b6b;
+    --line: #d5dce3;
+    --accent: #0a6c8f;
+    --accent-ink: #ffffff;
+    --bad: #b3261e;
+    --bad-bg: #fdebe9;
+    --chip-bg-l: 91%;
+    --chip-bd-l: 78%;
+    --chip-fg-l: 26%;
+    --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-code: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1419;
+      --panel: #151d24;
+      --panel-2: #1a242c;
+      --ink: #e4ebf1;
+      --ink-2: #9aa9b8;
+      --line: #2a3743;
+      --accent: #52b8da;
+      --accent-ink: #06222c;
+      --bad: #ff8f86;
+      --bad-bg: #3a1d1b;
+      --chip-bg-l: 21%;
+      --chip-bd-l: 34%;
+      --chip-fg-l: 82%;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1419;
+    --panel: #151d24;
+    --panel-2: #1a242c;
+    --ink: #e4ebf1;
+    --ink-2: #9aa9b8;
+    --line: #2a3743;
+    --accent: #52b8da;
+    --accent-ink: #06222c;
+    --bad: #ff8f86;
+    --bad-bg: #3a1d1b;
+    --chip-bg-l: 21%;
+    --chip-bd-l: 34%;
+    --chip-fg-l: 82%;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+  .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+  .brand { min-width: 0; flex: 1 1 360px; }
+  h1 { font-family: var(--font-display); font-size: 30px; line-height: 1.1; margin: 0 0 4px; letter-spacing: -0.01em; font-weight: 700; }
+  .sub { margin: 0; color: var(--ink-2); max-width: 62ch; text-wrap: pretty; }
+  .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .controls label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+
+  select, button {
+    font: inherit; font-size: 14px; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .panel-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
+  h2 { font-family: var(--font-display); font-size: 13px; text-transform: uppercase; letter-spacing: 0.09em; margin: 0; font-weight: 600; }
+  .hint { font-size: 12.5px; color: var(--ink-2); }
+
+  textarea {
+    width: 100%; min-height: 250px; resize: vertical;
+    font-family: var(--font-code); font-size: 13px; line-height: 1.6; tab-size: 4;
+    color: var(--ink); background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px;
+    white-space: pre; overflow: auto;
+  }
+  textarea:focus-visible { outline-offset: 0; border-color: var(--accent); }
+
+  details { font-size: 13px; color: var(--ink-2); }
+  summary { cursor: pointer; color: var(--ink); font-weight: 500; }
+  details ul { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+  code, .mono { font-family: var(--font-code); font-size: 12.5px; }
+  details code { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; color: var(--ink); }
+
+  .banner { background: var(--bad-bg); color: var(--bad); border: 1px solid var(--bad); border-radius: 6px; padding: 8px 10px; font-family: var(--font-code); font-size: 13px; overflow-wrap: anywhere; }
+
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tab { border-radius: 6px; padding: 5px 12px; background: transparent; border-color: transparent; color: var(--ink-2); font-weight: 500; }
+  .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .stats { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip, .tk {
+    --h: 200;
+    background: hsl(var(--h) 55% var(--chip-bg-l));
+    color: hsl(var(--h) 60% var(--chip-fg-l));
+    border: 1px solid hsl(var(--h) 45% var(--chip-bd-l));
+  }
+  .chip { font-family: var(--font-code); font-size: 12px; border-radius: 4px; padding: 1px 8px; display: inline-flex; gap: 8px; align-items: baseline; white-space: nowrap; }
+  .chip b { font-weight: 500; font-variant-numeric: tabular-nums; }
+  .chip.plain { background: var(--panel-2); color: var(--ink); border-color: var(--line); }
+  .chip.bad { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
+
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; max-height: 460px; overflow-y: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { position: sticky; top: 0; background: var(--panel-2); text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-2); font-weight: 600; padding: 7px 12px; border-bottom: 1px solid var(--line); }
+  td { padding: 5px 12px; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+  tr:last-child td { border-bottom: 0; }
+  td.pos { font-family: var(--font-code); color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.lex { font-family: var(--font-code); white-space: pre; }
+  .ws { color: var(--ink-2); }
+  .empty { padding: 24px 12px; color: var(--ink-2); text-align: center; }
+
+  pre.view { margin: 0; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; font-family: var(--font-code); font-size: 13px; line-height: 1.9; overflow: auto; max-height: 460px; white-space: pre; tab-size: 4; }
+  .tk { border-radius: 3px; padding: 1px 0; }
+  .skip { color: var(--ink-2); }
+  .err { background: var(--bad-bg); color: var(--bad); outline: 1px solid var(--bad); border-radius: 2px; }
+  pre.console { line-height: 1.5; }
+
+  .errors { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .errors li { background: var(--bad-bg); color: var(--bad); border-left: 3px solid var(--bad); padding: 5px 10px; font-family: var(--font-code); font-size: 12.5px; overflow-wrap: anywhere; }
+
+  .foot { font-size: 12.5px; color: var(--ink-2); }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 26px; }
+    textarea { min-height: 190px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    button, select, .tab { transition: background-color 0.12s, border-color 0.12s; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>MiniLex</h1>
+      <p class="sub">Describe each token with a regular expression, paste some source text, and read off the tokens. It builds an NFA from your rules and takes the longest match at every position, the same algorithm as the C++ original.</p>
+    </div>
+    <div class="controls">
+      <label for="preset">Example</label>
+      <select id="preset">
+        <option value="c">C-like source</option>
+        <option value="calc">Calculator</option>
+      </select>
+      <button id="reset" type="button">Reset</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel" aria-labelledby="h-rules">
+      <div class="panel-h"><h2 id="h-rules">Rules</h2><span class="hint">one per line: <span class="mono">regex TOKEN_NAME</span></span></div>
+      <textarea id="rules" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" aria-labelledby="h-rules"></textarea>
+      <div id="rulesErr" class="banner" role="alert" hidden></div>
+      <details>
+        <summary>Rule syntax</summary>
+        <ul>
+          <li>Literals, <code>.</code> (any character but newline), <code>[abc]</code>, <code>[a-z]</code>, <code>[^abc]</code>, <code>( )</code>, <code>|</code>, <code>*</code>, <code>+</code>, <code>?</code></li>
+          <li>Escapes: <code>\n</code> <code>\t</code> <code>\r</code> <code>\\</code>, or <code>\</code> before any operator to match it literally</li>
+          <li>The last word on the line is the token name. <code>SKIP</code> discards the match (whitespace, comments)</li>
+          <li>The longest match wins. On a tie the earlier rule wins, so list keywords before identifiers</li>
+          <li>To match a space, write <code>[ ]</code>. Lines starting with <code>#</code> are comments</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="panel" aria-labelledby="h-src">
+      <div class="panel-h"><h2 id="h-src">Source text</h2><span class="hint" id="srcMeta"></span></div>
+      <textarea id="src" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" aria-labelledby="h-src"></textarea>
+    </section>
+  </main>
+
+  <section class="panel" aria-labelledby="h-out">
+    <div class="panel-h">
+      <div class="tabs" role="tablist" aria-label="Output view" id="tabs">
+        <button class="tab" role="tab" id="tab-tokens" data-view="tokens" aria-selected="true" aria-controls="out-body" type="button">Tokens</button>
+        <button class="tab" role="tab" id="tab-marked" data-view="marked" aria-selected="false" aria-controls="out-body" type="button">Marked source</button>
+        <button class="tab" role="tab" id="tab-console" data-view="console" aria-selected="false" aria-controls="out-body" type="button">Console output</button>
+      </div>
+      <h2 id="h-out" class="hint" style="text-transform:none;letter-spacing:0;font-family:var(--font-body);font-weight:400"><span id="stats"></span></h2>
+    </div>
+    <div id="summary" class="chips" aria-label="Token counts"></div>
+    <div id="out-body" role="tabpanel" aria-labelledby="h-out"></div>
+    <ul id="errors" class="errors" hidden></ul>
+  </section>
+
+  <p class="foot">Console output matches what <code>./minilex</code> prints for the same rules and input. Columns count bytes, as in the C++ version.</p>
+</div>
+
+<script>
+// MiniLex core: JavaScript port of minilex.cpp (regex -> NFA, longest-match tokenizer).
+// Works on UTF-8 bytes, like the C++ version, so line/column numbers match it exactly.
+const MiniLex = (() => {
+  const enc = new TextEncoder();
+  const dec = new TextDecoder();
+  const C = (c) => c.charCodeAt(0);
+  const BS = C("\\"), LP = C("("), RP = C(")"), LB = C("["), RB = C("]");
+  const PIPE = C("|"), STAR = C("*"), PLUS = C("+"), QMARK = C("?"), DOT = C("."), CARET = C("^"), DASH = C("-");
+  const NL = 10;
+
+  const esc = (c) => (c === C("n") ? 10 : c === C("t") ? 9 : c === C("r") ? 13 : c === C("0") ? 0 : c);
+
+  class NFA {
+    constructor() { this.g = []; }
+    newState() { this.g.push([]); return this.g.length - 1; }
+    addEps(a, b) { this.g[a].push({ to: b, eps: true, set: null }); }
+    addSet(a, b, s) { this.g[a].push({ to: b, eps: false, set: s }); }
+  }
+
+  class RegexParser {
+    constructor(pattern, nfa) {
+      this.ps = pattern;
+      this.p = enc.encode(pattern);
+      this.i = 0;
+      this.nfa = nfa;
+    }
+    more() { return this.i < this.p.length; }
+    fromSet(s) {
+      const a = this.nfa.newState(), b = this.nfa.newState();
+      this.nfa.addSet(a, b, s);
+      return { s: a, e: b };
+    }
+    parseAlt() {
+      let left = this.parseConcat();
+      while (this.more() && this.p[this.i] === PIPE) {
+        this.i++;
+        const right = this.parseConcat();
+        const s = this.nfa.newState(), e = this.nfa.newState();
+        this.nfa.addEps(s, left.s); this.nfa.addEps(s, right.s);
+        this.nfa.addEps(left.e, e); this.nfa.addEps(right.e, e);
+        left = { s, e };
+      }
+      return left;
+    }
+    parseConcat() {
+      const p = this.p;
+      if (!this.more() || p[this.i] === PIPE || p[this.i] === RP) { // empty branch
+        const s = this.nfa.newState(), e = this.nfa.newState();
+        this.nfa.addEps(s, e);
+        return { s, e };
+      }
+      const f = this.parsePostfix();
+      while (this.more() && p[this.i] !== PIPE && p[this.i] !== RP) {
+        const n = this.parsePostfix();
+        this.nfa.addEps(f.e, n.s);
+        f.e = n.e;
+      }
+      return f;
+    }
+    parsePostfix() {
+      let f = this.parseAtom();
+      const p = this.p;
+      while (this.more() && (p[this.i] === STAR || p[this.i] === PLUS || p[this.i] === QMARK)) {
+        const op = p[this.i++];
+        const s = this.nfa.newState(), e = this.nfa.newState();
+        this.nfa.addEps(s, f.s);
+        this.nfa.addEps(f.e, e);
+        if (op === STAR || op === PLUS) this.nfa.addEps(f.e, f.s);
+        if (op === STAR || op === QMARK) this.nfa.addEps(s, e);
+        f = { s, e };
+      }
+      return f;
+    }
+    parseAtom() {
+      const p = this.p;
+      const c = p[this.i++];
+      if (c === LP) {
+        const f = this.parseAlt();
+        if (!this.more() || p[this.i] !== RP) throw new Error("missing ')' in regex: " + this.ps);
+        this.i++;
+        return f;
+      }
+      if (c === LB) return this.parseClass();
+      const s = new Uint8Array(256);
+      if (c === DOT) { s.fill(1); s[NL] = 0; }
+      else if (c === BS) {
+        if (!this.more()) throw new Error("dangling '\\' in regex: " + this.ps);
+        s[esc(p[this.i++])] = 1;
+      } else if (c === STAR || c === PLUS || c === QMARK) {
+        throw new Error("nothing to repeat before '" + String.fromCharCode(c) + "' in: " + this.ps);
+      } else s[c] = 1;
+      return this.fromSet(s);
+    }
+    parseClass() {
+      const p = this.p;
+      const s = new Uint8Array(256);
+      let neg = false;
+      if (this.more() && p[this.i] === CARET) { neg = true; this.i++; }
+      let closed = false;
+      while (this.more()) {
+        let c = p[this.i++];
+        if (c === RB) { closed = true; break; }
+        if (c === BS && this.more()) c = esc(p[this.i++]);
+        if (this.more() && p[this.i] === DASH && this.i + 1 < p.length && p[this.i + 1] !== RB) {
+          this.i++;
+          let hi = p[this.i++];
+          if (hi === BS && this.more()) hi = esc(p[this.i++]);
+          if (hi < c) throw new Error("bad range in regex: " + this.ps);
+          for (let x = c; x <= hi; x++) s[x] = 1;
+        } else s[c] = 1;
+      }
+      if (!closed) throw new Error("missing ']' in regex: " + this.ps);
+      if (neg) for (let x = 0; x < 256; x++) s[x] ^= 1;
+      return this.fromSet(s);
+    }
+    parse() {
+      const f = this.parseAlt();
+      if (this.more()) throw new Error("unmatched ')' in regex: " + this.ps);
+      return f;
+    }
+  }
+
+  class Lexer {
+    build(rules) {
+      this.rules = rules;
+      this.nfa = new NFA();
+      this.start = this.nfa.newState();
+      const accepts = [];
+      rules.forEach((r, k) => {
+        const f = new RegexParser(r.pattern, this.nfa).parse();
+        this.nfa.addEps(this.start, f.s);
+        accepts.push([f.e, k]);
+      });
+      this.acceptRule = new Int32Array(this.nfa.g.length).fill(-1);
+      for (const [st, k] of accepts) this.acceptRule[st] = k;
+    }
+    closure(input) {
+      const g = this.nfa.g;
+      const mark = new Uint8Array(g.length);
+      const out = [], st = [];
+      for (const s of input) if (!mark[s]) { mark[s] = 1; st.push(s); out.push(s); }
+      while (st.length) {
+        const u = st.pop();
+        for (const e of g[u]) if (e.eps && !mark[e.to]) { mark[e.to] = 1; st.push(e.to); out.push(e.to); }
+      }
+      return out;
+    }
+    step(cur, c) {
+      const nxt = [];
+      const g = this.nfa.g;
+      for (const u of cur) for (const e of g[u]) if (!e.eps && e.set[c]) nxt.push(e.to);
+      return nxt;
+    }
+    tokenize(text) {
+      const bytes = enc.encode(text);
+      const tokens = [], errors = [], segments = [];
+      let pos = 0, line = 1, col = 1;
+      while (pos < bytes.length) {
+        let cur = this.closure([this.start]);
+        let lastRule = -1, lastEnd = pos;
+        for (let i = pos; i < bytes.length && cur.length; i++) {
+          cur = this.closure(this.step(cur, bytes[i]));
+          let best = -1;
+          for (const s of cur) {
+            const r = this.acceptRule[s];
+            if (r >= 0 && (best < 0 || r < best)) best = r;
+          }
+          if (best >= 0) { lastRule = best; lastEnd = i + 1; }
+        }
+        if (lastRule < 0) {
+          const b = bytes[pos];
+          const shown = b === NL ? "\n" : b < 128 ? String.fromCharCode(b) : "\\x" + b.toString(16).padStart(2, "0");
+          errors.push({
+            line, col, ch: shown,
+            message: "Lexical error at " + line + ":" + col + " -> unexpected character '" + shown + "'",
+          });
+          segments.push({ kind: "err", start: pos, end: pos + 1 });
+          if (b === NL) { line++; col = 1; } else col++;
+          pos++;
+          continue;
+        }
+        const name = this.rules[lastRule].name;
+        const lexeme = dec.decode(bytes.subarray(pos, lastEnd));
+        if (name !== "SKIP") {
+          tokens.push({ type: name, lexeme, line, col, start: pos, end: lastEnd, rule: lastRule });
+          segments.push({ kind: "tok", start: pos, end: lastEnd, type: name, line, col });
+        } else {
+          segments.push({ kind: "skip", start: pos, end: lastEnd });
+        }
+        for (let k = pos; k < lastEnd; k++) {
+          if (bytes[k] === NL) { line++; col = 1; } else col++;
+        }
+        pos = lastEnd;
+      }
+      return { tokens, errors, segments, bytes };
+    }
+  }
+
+  const trim = (s) => s.replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "");
+
+  function parseRules(text) {
+    const rules = [];
+    const lines = text.split("\n");
+    if (lines.length && lines[lines.length - 1] === "") lines.pop();
+    let ln = 0;
+    for (let line of lines) {
+      ln++;
+      line = trim(line);
+      if (line === "" || line[0] === "#") continue;
+      let sp = -1;
+      for (let k = line.length - 1; k >= 0; k--) if (line[k] === " " || line[k] === "\t") { sp = k; break; }
+      if (sp < 0) throw new Error("rules line " + ln + ": expected '<regex> <TOKEN>'");
+      const pattern = trim(line.slice(0, sp));
+      const name = trim(line.slice(sp + 1));
+      if (pattern === "" || name === "") throw new Error("rules line " + ln + ": empty pattern or token name");
+      rules.push({ pattern, name });
+    }
+    return rules;
+  }
+
+  const pad = (s, w) => (s.length >= w ? s : s + " ".repeat(w - s.length));
+
+  // Same console layout as the C++ program's main().
+  function formatConsole(result) {
+    const { tokens, errors } = result;
+    let out = pad("LINE:COL", 8) + pad("TOKEN", 18) + "LEXEME\n" + "-".repeat(50) + "\n";
+    const counts = new Map();
+    for (const t of tokens) {
+      out += pad(t.line + ":" + t.col, 8) + pad(t.type, 18) + t.lexeme.replace(/\n/g, " ") + "\n";
+      counts.set(t.type, (counts.get(t.type) || 0) + 1);
+    }
+    out += "\n--- Summary ---\n";
+    for (const k of [...counts.keys()].sort()) out += pad(k, 18) + counts.get(k) + "\n";
+    out += "Total tokens: " + tokens.length + "\n";
+    if (errors.length) {
+      out += "\n--- Errors ---\n";
+      for (const e of errors) out += e.message + "\n";
+    }
+    return out;
+  }
+
+  function run(rulesText, sourceText) {
+    const rules = parseRules(rulesText);
+    const lx = new Lexer();
+    lx.build(rules);
+    const result = lx.tokenize(sourceText);
+    result.rules = rules;
+    result.nfaStates = lx.nfa.g.length;
+    return result;
+  }
+
+  return { run, parseRules, formatConsole, Lexer };
+})();
+
+if (typeof module !== "undefined") module.exports = MiniLex;
+
+</script>
+<script>
+(function () {
+  var PRESETS = {
+    c: { rules: "\n# keywords first so they beat IDENTIFIER on equal length\nif|else|while|for|return|int|float|char|void|double   KEYWORD\n[a-zA-Z_][a-zA-Z0-9_]*                                 IDENTIFIER\n[0-9]+\\.[0-9]+                                         FLOAT_LITERAL\n[0-9]+                                                 INT_LITERAL\n\"([^\"\\\\]|\\\\.)*\"                                        STRING_LITERAL\n//[^\\n]*                                               SKIP\n==|!=|<=|>=|&&|\\|\\||\\+\\+|--|[-+*/%=<>!&|]              OPERATOR\n[(){};,\\[\\]]                                           PUNCTUATION\n[ \\t\\r\\n]+                                             SKIP\n", src: "int main() {\n    float x = 3.14;   // pi-ish\n    if (x >= 3 && x != 4) {\n        printf(\"hello\\n\");\n    }\n    int count = 10 @ 2;\n    return 0;\n}\n" },
+    calc: {
+      rules: [
+        "# arithmetic expressions",
+        "[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?   NUMBER",
+        "sin|cos|tan|sqrt|log                    FUNCTION",
+        "[a-zA-Z_][a-zA-Z0-9_]*                  VARIABLE",
+        "[-+*/^=]                                OPERATOR",
+        "[()]                                    PAREN",
+        ",                                       COMMA",
+        "[ \\t\\r\\n]+                              SKIP",
+        ""
+      ].join("\n"),
+      src: "y = 2.5e-3 * sqrt(x + 4) - log(10)\nrate = 3 $ 2\n"
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var rulesEl = $("rules"), srcEl = $("src"), presetEl = $("preset");
+  var view = "tokens";
+  var last = null;
+
+  function hueFor(result, type) {
+    var order = [];
+    result.rules.forEach(function (r) { if (r.name !== "SKIP" && order.indexOf(r.name) < 0) order.push(r.name); });
+    var i = order.indexOf(type);
+    return Math.round((i * 137.5 + 205) % 360);
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function showWs(s) {
+    return s.replace(/\n/g, "↵").replace(/\t/g, "⇥").replace(/\r/g, "␍");
+  }
+
+  function escCh(ch) {
+    return ch === "\n" ? "\\n" : ch === "\t" ? "\\t" : ch === "\r" ? "\\r" : ch;
+  }
+
+  function renderSummary(result) {
+    var box = $("summary");
+    box.textContent = "";
+    var counts = {};
+    result.tokens.forEach(function (t) { counts[t.type] = (counts[t.type] || 0) + 1; });
+    Object.keys(counts).sort().forEach(function (k) {
+      var c = el("span", "chip");
+      c.style.setProperty("--h", hueFor(result, k));
+      c.appendChild(el("span", "", k));
+      c.appendChild(el("b", "", String(counts[k])));
+      box.appendChild(c);
+    });
+    var total = el("span", "chip plain");
+    total.appendChild(el("span", "", "Total"));
+    total.appendChild(el("b", "", String(result.tokens.length)));
+    box.appendChild(total);
+    if (result.errors.length) {
+      var bad = el("span", "chip bad");
+      bad.appendChild(el("span", "", "Errors"));
+      bad.appendChild(el("b", "", String(result.errors.length)));
+      box.appendChild(bad);
+    }
+  }
+
+  function renderTokens(result) {
+    var body = $("out-body");
+    body.textContent = "";
+    if (!result.tokens.length) { body.appendChild(el("div", "empty", "No tokens yet. Type some source text above.")); return; }
+    var wrap = el("div", "scroll");
+    var table = el("table");
+    var thead = el("thead"), hr = el("tr");
+    ["Line:Col", "Token", "Lexeme"].forEach(function (h) { hr.appendChild(el("th", "", h)); });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+    var tb = el("tbody");
+    result.tokens.forEach(function (t) {
+      var tr = el("tr");
+      tr.appendChild(el("td", "pos", t.line + ":" + t.col));
+      var td = el("td");
+      var chip = el("span", "chip", t.type);
+      chip.style.setProperty("--h", hueFor(result, t.type));
+      td.appendChild(chip);
+      tr.appendChild(td);
+      var lx = el("td", "lex");
+      var shown = showWs(t.lexeme);
+      if (shown !== t.lexeme) {
+        lx.appendChild(document.createTextNode(""));
+        t.lexeme.split(/(\n|\t|\r)/).forEach(function (part) {
+          if (part === "\n" || part === "\t" || part === "\r") lx.appendChild(el("span", "ws", showWs(part)));
+          else if (part) lx.appendChild(document.createTextNode(part));
+        });
+      } else lx.textContent = t.lexeme;
+      tr.appendChild(lx);
+      tb.appendChild(tr);
+    });
+    table.appendChild(tb);
+    wrap.appendChild(table);
+    body.appendChild(wrap);
+  }
+
+  function renderMarked(result) {
+    var body = $("out-body");
+    body.textContent = "";
+    var pre = el("pre", "view");
+    var dec = new TextDecoder();
+    var bytes = result.bytes;
+    var segs = result.segments;
+    var i = 0;
+    while (i < segs.length) {
+      var s = segs[i];
+      var node;
+      if (s.kind === "err") {
+        var j = i, end = s.end;
+        while (j + 1 < segs.length && segs[j + 1].kind === "err" && segs[j + 1].start === end) { j++; end = segs[j].end; }
+        node = el("span", "err", dec.decode(bytes.subarray(s.start, end)));
+        node.title = "Lexical error at " + s.start;
+        i = j + 1;
+      } else if (s.kind === "tok") {
+        node = el("span", "tk", dec.decode(bytes.subarray(s.start, s.end)));
+        node.style.setProperty("--h", hueFor(result, s.type));
+        node.title = s.type + "  " + s.line + ":" + s.col;
+        i++;
+      } else {
+        node = el("span", "skip", dec.decode(bytes.subarray(s.start, s.end)));
+        i++;
+      }
+      pre.appendChild(node);
+    }
+    if (!segs.length) pre.appendChild(el("span", "skip", "Nothing to show."));
+    body.appendChild(pre);
+  }
+
+  function renderConsole(result) {
+    var body = $("out-body");
+    body.textContent = "";
+    body.appendChild(el("pre", "view console", MiniLex.formatConsole(result)));
+  }
+
+  function renderErrors(result) {
+    var ul = $("errors");
+    ul.textContent = "";
+    if (!result.errors.length) { ul.hidden = true; return; }
+    ul.hidden = false;
+    result.errors.forEach(function (e) {
+      ul.appendChild(el("li", "", "Lexical error at " + e.line + ":" + e.col + " → unexpected character '" + escCh(e.ch) + "'"));
+    });
+  }
+
+  function renderView() {
+    if (!last) return;
+    if (view === "tokens") renderTokens(last);
+    else if (view === "marked") renderMarked(last);
+    else renderConsole(last);
+  }
+
+  function run() {
+    var banner = $("rulesErr");
+    var t0 = performance.now();
+    var result;
+    try {
+      result = MiniLex.run(rulesEl.value, srcEl.value);
+    } catch (e) {
+      banner.textContent = e.message;
+      banner.hidden = false;
+      last = null;
+      $("summary").textContent = "";
+      $("errors").hidden = true;
+      $("stats").textContent = "";
+      var body = $("out-body");
+      body.textContent = "";
+      body.appendChild(el("div", "empty", "Fix the rules above to see tokens."));
+      return;
+    }
+    banner.hidden = true;
+    var ms = performance.now() - t0;
+    last = result;
+    $("stats").textContent = result.tokens.length + " tokens · " + result.nfaStates + " NFA states · " + (ms < 1 ? "<1" : ms.toFixed(1)) + " ms";
+    renderSummary(result);
+    renderErrors(result);
+    renderView();
+  }
+
+  function loadPreset() {
+    var p = PRESETS[presetEl.value];
+    rulesEl.value = p.rules;
+    srcEl.value = p.src;
+    run();
+  }
+
+  function updateMeta() {
+    var lines = srcEl.value.split("\n").length;
+    $("srcMeta").textContent = lines + (lines === 1 ? " line" : " lines");
+  }
+
+  rulesEl.addEventListener("input", run);
+  srcEl.addEventListener("input", function () { updateMeta(); run(); });
+  presetEl.addEventListener("change", function () { loadPreset(); updateMeta(); });
+  $("reset").addEventListener("click", function () { loadPreset(); updateMeta(); });
+
+  $("tabs").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".tab");
+    if (!b) return;
+    view = b.getAttribute("data-view");
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
+      t.setAttribute("aria-selected", t === b ? "true" : "false");
+    });
+    renderView();
+  });
+
+  loadPreset();
+  updateMeta();
+})();
+</script>
+
